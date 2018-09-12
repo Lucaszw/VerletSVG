@@ -1,0 +1,25 @@
+{
+  "name": "MagicFabric",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@turf/helpers": "^6.1.4",
+    "@turf/turf": "^5.1.6",
+    "css-loader": "^1.0.0",
+    "d3": "^5.7.0",
+    "dom-to-image": "^2.6.0",
+    "earcut": "^2.1.3",
+    "express": "^4.16.3",
+    "lodash": "^4.17.10",
+    "style-loader": "^0.23.0",
+    "svg-intersections": "^0.4.0",
+    "svg.js": "^2.6.6",
+    "webpack": "3",
+    "yo-yo": "^1.4.1"
+  },
+  "scripts": {
+    "build": "./node_modules/.bin/webpack",
+    "start": "npm run-script build && node server.js"
+  }
+}
