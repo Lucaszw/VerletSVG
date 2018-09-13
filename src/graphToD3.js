@@ -93,7 +93,6 @@ module.exports = (doc, svgUrl) => {
         .attr("r", 30)
         .attr("stroke", "rgba(193, 193, 193, 0)")
         .attr("fill", function(d) { return "rgba(0,0,0, 0)" })
-        .on("mouseout", mouseout)
         .on("mouseover", mouseover)
         .call(d3.drag()
             .on("start", dragstarted)

@@ -3,6 +3,10 @@
     <script src="/build/graphToD3.web.js"></script>
   </head>
   <body>
-    <script> graphToD3(document.body, "/resources/Brain.svg"); </script>
+    <div id="BrainContainer"></div>
+    <script>
+    let container = document.querySelector("#BrainContainer");
+    graphToD3(container, "/resources/Brain.svg");
+    </script>
   </body>
 </html>
