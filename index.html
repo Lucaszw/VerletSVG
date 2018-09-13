@@ -4,19 +4,26 @@
   </head>
   <body>
     <div id="BrainContainer"></div>
-    <!-- <div id="aContainer" style="position:absolute; left: 500px;"></div> -->
+    <div id="OvalContainer" style="position:absolute; left: 500px;top:300px;"></div>
+    <div id="aContainer" style="position:absolute; left: 500px;"></div>
     <script>
-
 
     let container = document.querySelector("#BrainContainer");
     graphToD3(container, "/resources/Brain.svg", {
-      borderPoints: 30,
-      noContours: false,
-      xRay: false,
-      internalPoints: 350,
-      nodeRadius: 20
     });
-
+    // 
+    // container = document.querySelector("#OvalContainer");
+    // graphToD3(container, "/resources/Oval.svg", {
+    //   borderPoints: 20,
+    //   noContours: false,
+    //   xRay: false,
+    //   internalPoints: 200,
+    //   nodeRadius: 30,
+    //   bandwidth: 20,
+    //   threshold: 0.001,
+    //   zoom: 0.1
+    // });
+    //
     // container = document.querySelector("#aContainer");
     // graphToD3(container, "/resources/E.svg", {
     //   borderPoints: 20,

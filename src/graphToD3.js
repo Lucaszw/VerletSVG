@@ -12,6 +12,9 @@ module.exports = (doc, svgUrl, options={}) => {
   let noHover = options.noHover || false;
   let noContours = options.noContours || false;
   let nodeRadius = options.nodeRadius || 20;
+  let bandwidth = options.bandwidth || 11;
+  let threshold = options.threshold || 0.018;
+
   const container = yo`
     <div style="zoom:${zoom}">
       <canvas style="position:absolute;top;0px;left:0px" width="900" height="900">
@@ -124,8 +127,8 @@ module.exports = (doc, svgUrl, options={}) => {
            .x(function(d) { return transform(d.x); })
            .y(function(d) { return transform(d.y); })
            .size([width, height])
-           .bandwidth(11)
-           .thresholds([0.018])
+           .bandwidth(bandwidth)
+           .thresholds([threshold])
          (graph.nodes)
 
      context.fillStyle = 'none';
