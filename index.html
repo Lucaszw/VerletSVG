@@ -4,9 +4,27 @@
   </head>
   <body>
     <div id="BrainContainer"></div>
+    <!-- <div id="aContainer" style="position:absolute; left: 500px;"></div> -->
     <script>
+
+
     let container = document.querySelector("#BrainContainer");
-    graphToD3(container, "/resources/Brain.svg");
+    graphToD3(container, "/resources/Brain.svg", {
+      borderPoints: 30,
+      noContours: false,
+      xRay: false,
+      internalPoints: 350,
+      nodeRadius: 20
+    });
+
+    // container = document.querySelector("#aContainer");
+    // graphToD3(container, "/resources/E.svg", {
+    //   borderPoints: 20,
+    //   internalPoints: 400,
+    //   xRay: false,
+    //   noHover: false
+    // });
+
     </script>
   </body>
 </html>
