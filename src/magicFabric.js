@@ -143,7 +143,8 @@ module.exports = (svg) => {
       let y = p[1];
       let id = fetchId(p[0], p[1]);
       nodes[id] = {id, color: "black", x, y};
-      if (_.includes(fixedIds, id)) {
+      //_.includes(fixedIds, id)
+      if (Math.round(Math.random())) {
         nodes[id].fx = x;
         nodes[id].fy = y;
         nodes[id].color = "red";
