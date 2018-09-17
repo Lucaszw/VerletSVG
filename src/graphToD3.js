@@ -14,12 +14,19 @@ module.exports = (doc, svgUrl, options={}) => {
   let nodeRadius = options.nodeRadius || 20;
   let bandwidth = options.bandwidth || 11;
   let threshold = options.threshold || 0.018;
+  let noFixed = options.noFixed || false;
+  let height = options.height || 500;
+  let width = options.width || 500;
+  let scale = options.scale || 1;
+  let margin = options.margin || 23;
+  let fixedBias = options.fixedBias || 0;
+  let linkStrength = options.linkStrength || 1.5;
 
   const container = yo`
-    <div style="zoom:${zoom}">
-      <canvas style="position:absolute;top;0px;left:0px" width="900" height="900">
+    <div style="zoom:${zoom}; width:100%; height:100%; overflow:hidden;">
+      <canvas style="position:absolute;top;0px;left:0px" width="${width}" height="${height}">
       </canvas>
-      <svg style="position:absolute;top;0px;left:0px" width="900" height="900" id="d3Container">
+      <svg style="position:absolute;top;0px;left:0px" width="${width}" height="${height}" id="d3Container">
       </svg>
     </div>
   `;
@@ -46,33 +53,84 @@ module.exports = (doc, svgUrl, options={}) => {
   }
 
   function transform(data, axis) {
-    let margin = 23, scale = 1;
-    return margin + data / scale;
+    return (margin + data) * scale;
   }
 
   function mouseover(d, nodes) {
     if (noHover == true) return;
     let magnitude = Math.sqrt(Math.abs(d.vx || 0)**2 + Math.abs(d.vy || 0)**2);
-    // if (magnitude > 1) return;
+    if (magnitude > 1) return;
 
     let sign;
     sign = Math.random() < 0.5 ? -1 : 1;
-    d.vx = sign*500;
+    d.vx = 1*500;
     sign = Math.random() < 0.5 ? -1 : 1;
-    d.vy = sign*500;
-    console.log({this: this, args});
+    d.vy = 1*500;
   }
+
+  let xPos = 250, yPos = 250, Pos = 250;
+  function moveAtAngle(center, mouseEvent) {
+    moveStrength = 0.055;
+
+    let mouse = {
+      x: mouseEvent.clientX/zoom,
+      y: mouseEvent.clientY/zoom
+    };
+
+    let dx = mouse.x - center.x;
+    let dy = mouse.y - center.y;
+    let angle = Math.atan(dy/dx);
+    // XXX: atan only works for top right quadrant so:
+    if (dx < 0 ) angle += Math.PI;
+    else if (dy < 0 ) angle += 2* Math.PI;
+
+    console.log(angle);
+    let Fx = moveStrength*Math.cos(angle);
+    let Fy = moveStrength*Math.sin(angle);
+    let Dx = Pos*Math.cos(angle);
+    let Dy = Pos*Math.sin(angle);
+
+    simulation.force("x", null);
+    simulation.force("y", null);
+
+    simulation.force("x", d3.forceX(center.x+Dx).strength(Fx));
+    simulation.force("y", d3.forceY(center.y+Dy).strength(Fy));
+  }
+
+  function moveNodes(e) {
+
+    simulation.force("x", null);
+    simulation.force("y", null);
+    moveStrength = 0.025;
+    switch (e.key) {
+      case "ArrowRight":
+        simulation.force("x", d3.forceX(2.5*xPos).strength(moveStrength));
+        break;
+      case "ArrowLeft":
+        simulation.force("x", d3.forceX(-xPos).strength(moveStrength));
+        break;
+      case "ArrowDown":
+        simulation.force("y", d3.forceY(2.5*yPos).strength(moveStrength));
+        break;
+      case "ArrowUp":
+        simulation.force("y", d3.forceY(-yPos).strength(moveStrength));
+        break;
+    }
+    // setTimeout(()=> {
+    //   simulation.force("x", null);
+    //   simulation.force("y", null);
+    // }, 500);
+  };
 
   let xhr=new XMLHttpRequest();
   let div = document.createElement("div");
 
   xhr.onload = (...args) => {
     div.innerHTML = xhr.responseText;
-    graph = magicFabric(div.firstChild, {borderPoints, internalPoints});
+    graph = magicFabric(div.firstChild, {borderPoints, internalPoints, noFixed, fixedBias});
 
-    var svg = d3.select(container.querySelector("svg")),
-        width = +svg.attr("width"),
-        height = +svg.attr("height");
+    var svg = d3.select(container.querySelector("svg"));
+
 
     var canvas = d3.select(container.querySelector("canvas"));
     var context = canvas.node().getContext('2d');
@@ -83,14 +141,14 @@ module.exports = (doc, svgUrl, options={}) => {
 
     simulation = d3.forceSimulation(graph.nodes)
         .force("link", d3.forceLink(graph.edges).id(function(d) { return d.id; })
-        .strength(2)
+        .strength(linkStrength)
         .distance((d) => {
           return d.distance;
         }))
-        .force("charge", d3.forceManyBody()
-        .strength(-5))
+        .alphaDecay(0.001)
         .on("tick", ticked);
-
+        // .force("charge", d3.forceManyBody()
+        // .strength(-5))
     var link = svg.append("g")
         .attr("class", "links")
       .selectAll("line")
@@ -160,4 +218,6 @@ module.exports = (doc, svgUrl, options={}) => {
 
   xhr.open("GET",svgUrl,true);
   xhr.send();
+
+  return {moveNodes, moveAtAngle};
 };

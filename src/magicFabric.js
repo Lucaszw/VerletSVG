@@ -154,13 +154,13 @@ const constructPolygonCoordinates = (shape, box, borderPoints) => {
 module.exports = (svg, options) => {
   let borderPoints = options.borderPoints || 100;
   let internalPoints = options.internalPoints || 300;
-
+  let noFixed = options.noFixed || false;
+  let fixedBias = options.fixedBias || 0;
+  
   var element = SVG.adopt(svg);
   let shape = constructShape(svg.querySelector("#MyShape"));
   let box = shape.shape.bbox();
   console.log({box, shape});
-
-  let fixedRatio = 15;
 
   let vertices  = [];
   let nodes = {};
@@ -225,7 +225,7 @@ module.exports = (svg, options) => {
       let y = p[1];
       let id = fetchId(p[0], p[1]);
       nodes[id] = {id, color: "black", x, y};
-      if (Math.round(Math.random())) {
+      if (Math.round(Math.random() + fixedBias) && !noFixed) {
         nodes[id].fx = x;
         nodes[id].fy = y;
         nodes[id].color = "red";

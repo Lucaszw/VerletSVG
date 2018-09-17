@@ -4,26 +4,39 @@
   </head>
   <body>
     <div id="BrainContainer"></div>
-    <div id="OvalContainer" style="position:absolute; left: 500px;top:300px;"></div>
-    <div id="aContainer" style="position:absolute; left: 500px;"></div>
+    <!-- <div id="OvalContainer"></div> -->
+    <!-- <div id="aContainer" style="position:absolute; left: 500px;"></div> -->
     <script>
 
     let container = document.querySelector("#BrainContainer");
-    graphToD3(container, "/resources/Brain.svg", {
+    let actions;
+    actions = graphToD3(container, "/resources/Brain.svg", {
+      xRay: false,
+      width: 1000,
+      height: 1000,
+      margin: 200,
+      nodeRadius: 100,
+      bandwidth: 9,
+      threshold: 0.02,
+      noHover: false,
+      fixedBias: 0.2,
+      linkStrength: 1,
+      borderPoints: 30
     });
-    // 
+
     // container = document.querySelector("#OvalContainer");
-    // graphToD3(container, "/resources/Oval.svg", {
+
+    // let actions = graphToD3(container, "/resources/Oval.svg", {
     //   borderPoints: 20,
     //   noContours: false,
-    //   xRay: false,
+    //   xRay: true,
     //   internalPoints: 200,
     //   nodeRadius: 30,
-    //   bandwidth: 20,
+    //   bandwidth: 10,
     //   threshold: 0.001,
-    //   zoom: 0.1
+    //   noFixed: true
     // });
-    //
+
     // container = document.querySelector("#aContainer");
     // graphToD3(container, "/resources/E.svg", {
     //   borderPoints: 20,
@@ -31,6 +44,22 @@
     //   xRay: false,
     //   noHover: false
     // });
+
+    document.onmousemove = (e) => {
+      let bbox = document.querySelector("#d3Container").getBoundingClientRect();
+      // console.log({bbox})
+      let center = {
+        x: bbox.left + bbox.width/2,
+        y: bbox.top + bbox.height/2
+      };
+      actions.moveAtAngle(center, e);
+      console.log({center});
+      // console.log("Mouse moved!");
+      // console.log({e});
+    }
+    document.onkeydown = (e) => {
+      actions.moveNodes(e);
+    };
 
     </script>
   </body>
