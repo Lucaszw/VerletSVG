@@ -156,11 +156,10 @@ module.exports = (svg, options) => {
   let internalPoints = options.internalPoints || 300;
   let noFixed = options.noFixed || false;
   let fixedBias = options.fixedBias || 0;
-  
+
   var element = SVG.adopt(svg);
   let shape = constructShape(svg.querySelector("#MyShape"));
   let box = shape.shape.bbox();
-  console.log({box, shape});
 
   let vertices  = [];
   let nodes = {};
@@ -168,20 +167,15 @@ module.exports = (svg, options) => {
 
   // Generate coordinates for constructing a polygon
   let polygonCoordinates = constructPolygonCoordinates(shape, box, borderPoints);
-  console.log({polygonCoordinates});
   // Generate coordinates for holes in outer polygon
   let holeCoordinates = [];
   if (shape.isGroup && shape.holes.length > 0) {
     _.each(shape.holes, (h) => {
       let [hole, holeShape] = h;
-      console.log({hole, holeShape});
       let box = hole.shape.bbox();
-      console.log({box});
       let holeCoords = constructPolygonCoordinates(hole, box, borderPoints);
       holeCoordinates = [...holeCoordinates, holeCoords];
     });
-
-    console.log({holeCoordinates});
 
   }
 
@@ -210,8 +204,6 @@ module.exports = (svg, options) => {
   pointsWithin.features = _.filter(pointsWithin.features, (f)=>{return !f.shouldDelete});
 
   points.features = [...outerPoints, ...pointsWithin.features];
-
-  console.log({fetures: points.features});
 
   var tin = turf.tin(points);
 
@@ -262,7 +254,6 @@ module.exports = (svg, options) => {
   }
 
   nodes = _.values(nodes);
-  console.log({nodes, edges});
 
   return {nodes, edges};
 }

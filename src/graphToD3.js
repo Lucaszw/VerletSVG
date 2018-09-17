@@ -56,16 +56,22 @@ module.exports = (doc, svgUrl, options={}) => {
     return (margin + data) * scale;
   }
 
+  let prevId = null;
   function mouseover(d, nodes) {
-    if (noHover == true) return;
-    let magnitude = Math.sqrt(Math.abs(d.vx || 0)**2 + Math.abs(d.vy || 0)**2);
-    if (magnitude > 1) return;
 
-    let sign;
-    sign = Math.random() < 0.5 ? -1 : 1;
-    d.vx = 1*500;
-    sign = Math.random() < 0.5 ? -1 : 1;
-    d.vy = 1*500;
+    let clearId = () => {
+      simulation.force(prevId, null);
+      prevId = null;
+    };
+
+    if (noHover == true) return;
+    if (prevId) clearId();
+
+    simulation.force(d.id, d3.forceRadial(1,d.x,d.y).strength(0.1));
+    prevId = d.id;
+
+    setTimeout(clearId, 5000);
+
   }
 
   let xPos = 250, yPos = 250, Pos = 250;
@@ -80,11 +86,11 @@ module.exports = (doc, svgUrl, options={}) => {
     let dx = mouse.x - center.x;
     let dy = mouse.y - center.y;
     let angle = Math.atan(dy/dx);
-    // XXX: atan only works for top right quadrant so:
+    // XXX: atan only works for top right quadrant so bias the angle based
+    // on the sign of x & y
     if (dx < 0 ) angle += Math.PI;
     else if (dy < 0 ) angle += 2* Math.PI;
 
-    console.log(angle);
     let Fx = moveStrength*Math.cos(angle);
     let Fy = moveStrength*Math.sin(angle);
     let Dx = Pos*Math.cos(angle);
@@ -116,10 +122,7 @@ module.exports = (doc, svgUrl, options={}) => {
         simulation.force("y", d3.forceY(-yPos).strength(moveStrength));
         break;
     }
-    // setTimeout(()=> {
-    //   simulation.force("x", null);
-    //   simulation.force("y", null);
-    // }, 500);
+
   };
 
   let xhr=new XMLHttpRequest();
