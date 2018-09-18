@@ -1,11 +1,63 @@
 <html>
   <head>
     <script src="/build/graphToD3.web.js"></script>
+    <style>
+      #BrainContainer {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        margin-top: -250px;
+        margin-left: -250px;
+      }
+      .textContainer {
+        zoom: 0.05;
+        margin-top: 7550px;
+        position: fixed;
+        left: 50%;
+        margin-left: -1800px;
+      }
+
+      .textContainer path {
+        fill: #333333;
+      }
+
+      #braineryTextContainer {
+        /* top: 0px; */
+        margin-top: 100px;
+        margin-left: -1000px;
+        /* margin-left: -2600px; */
+      }
+    </style>
   </head>
   <body>
+    <div class="textContainer">
+      <div id="theTextContainer"></div>
+      <div id="braineryTextContainer"></div>
+    </div>
+
     <div id="BrainContainer"></div>
     <!-- <div id="OvalContainer"></div> -->
     <!-- <div id="aContainer" style="position:absolute; left: 500px;"></div> -->
+    <script>
+      let div, div2, xhr, xhr2;
+
+      div = document.querySelector("#theTextContainer");
+      xhr=new XMLHttpRequest();
+      xhr.onload = (...args) => {
+        div.innerHTML = xhr.responseText;
+      }
+      xhr.open("GET","/resources/THE.svg",true);
+      xhr.send();
+
+      div2 = document.querySelector("#braineryTextContainer");
+      xhr2=new XMLHttpRequest();
+      xhr2.onload = (...args) => {
+        div2.innerHTML = xhr2.responseText;
+      }
+      xhr2.open("GET","/resources/Brainery.svg",true);
+      xhr2.send();
+
+    </script>
     <script>
 
     let container = document.querySelector("#BrainContainer");
@@ -17,11 +69,12 @@
       margin: 200,
       nodeRadius: 100,
       bandwidth: 9,
-      threshold: 0.02,
+      threshold: 0.019,
       noHover: false,
-      fixedBias: 0.2,
+      fixedBias: 0.3,
       linkStrength: 1,
-      borderPoints: 30
+      borderPoints: 40,
+      zoom: 0.4
     });
 
     // container = document.querySelector("#OvalContainer");
@@ -48,18 +101,11 @@
     document.onmousemove = (e) => {
       let bbox = document.querySelector("#d3Container").getBoundingClientRect();
       // console.log({bbox})
-      let center = {
-        x: bbox.left + bbox.width/2,
-        y: bbox.top + bbox.height/2
-      };
-      actions.moveAtAngle(center, e);
-      console.log({center});
+
+      actions.moveAtAngle(bbox, e);
       // console.log("Mouse moved!");
       // console.log({e});
     }
-    document.onkeydown = (e) => {
-      actions.moveNodes(e);
-    };
 
     </script>
   </body>

@@ -23,7 +23,7 @@ module.exports = (doc, svgUrl, options={}) => {
   let linkStrength = options.linkStrength || 1.5;
 
   const container = yo`
-    <div style="zoom:${zoom}; width:100%; height:100%; overflow:hidden;">
+    <div style="zoom:${zoom}; width:${width}px; height:${height}px; overflow:hidden;">
       <canvas style="position:absolute;top;0px;left:0px" width="${width}" height="${height}">
       </canvas>
       <svg style="position:absolute;top;0px;left:0px" width="${width}" height="${height}" id="d3Container">
@@ -57,26 +57,43 @@ module.exports = (doc, svgUrl, options={}) => {
   }
 
   let prevId = null;
-  function mouseover(d, nodes) {
 
-    let clearId = () => {
-      simulation.force(prevId, null);
-      prevId = null;
-    };
+  let clearId = (id) => {
+    simulation.force(id, null);
+    prevId = null;
+  };
+
+  function mouseover(d, nodes) {
+    let strength = 0.01;
 
     if (noHover == true) return;
-    if (prevId) clearId();
+    // if (prevId) clearId();
 
-    simulation.force(d.id, d3.forceRadial(1,d.x,d.y).strength(0.1));
+    let ticks = 0;
+    let interval;
+
+    simulation.force(d.id, d3.forceRadial(1,d.x,d.y).strength(strength));
     prevId = d.id;
 
-    setTimeout(clearId, 5000);
+    interval = setInterval(()=>{
+      if (ticks > 20) {
+        clearInterval(interval);
+        clearId(d.id);
+      } else {
+        ticks ++;
+        simulation.force(d.id, d3.forceRadial(1,d.x,d.y).strength(strength/ticks));
+      }
+    }, 10);
+
 
   }
 
-  let xPos = 250, yPos = 250, Pos = 250;
-  function moveAtAngle(center, mouseEvent) {
-    moveStrength = 0.055;
+  function moveAtAngle(bbox, mouseEvent) {
+    moveStrength = 0.025;
+    let center = {
+      x: bbox.left + bbox.width/2,
+      y: bbox.top + bbox.height/2
+    };
 
     let mouse = {
       x: mouseEvent.clientX/zoom,
@@ -85,7 +102,9 @@ module.exports = (doc, svgUrl, options={}) => {
 
     let dx = mouse.x - center.x;
     let dy = mouse.y - center.y;
+
     let angle = Math.atan(dy/dx);
+
     // XXX: atan only works for top right quadrant so bias the angle based
     // on the sign of x & y
     if (dx < 0 ) angle += Math.PI;
@@ -93,8 +112,8 @@ module.exports = (doc, svgUrl, options={}) => {
 
     let Fx = moveStrength*Math.cos(angle);
     let Fy = moveStrength*Math.sin(angle);
-    let Dx = Pos*Math.cos(angle);
-    let Dy = Pos*Math.sin(angle);
+    let Dx = (bbox.width)*Math.cos(angle);
+    let Dy = (bbox.height)*Math.sin(angle);
 
     simulation.force("x", null);
     simulation.force("y", null);
@@ -102,28 +121,6 @@ module.exports = (doc, svgUrl, options={}) => {
     simulation.force("x", d3.forceX(center.x+Dx).strength(Fx));
     simulation.force("y", d3.forceY(center.y+Dy).strength(Fy));
   }
-
-  function moveNodes(e) {
-
-    simulation.force("x", null);
-    simulation.force("y", null);
-    moveStrength = 0.025;
-    switch (e.key) {
-      case "ArrowRight":
-        simulation.force("x", d3.forceX(2.5*xPos).strength(moveStrength));
-        break;
-      case "ArrowLeft":
-        simulation.force("x", d3.forceX(-xPos).strength(moveStrength));
-        break;
-      case "ArrowDown":
-        simulation.force("y", d3.forceY(2.5*yPos).strength(moveStrength));
-        break;
-      case "ArrowUp":
-        simulation.force("y", d3.forceY(-yPos).strength(moveStrength));
-        break;
-    }
-
-  };
 
   let xhr=new XMLHttpRequest();
   let div = document.createElement("div");
@@ -222,5 +219,5 @@ module.exports = (doc, svgUrl, options={}) => {
   xhr.open("GET",svgUrl,true);
   xhr.send();
 
-  return {moveNodes, moveAtAngle};
+  return {moveAtAngle};
 };
