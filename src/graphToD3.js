@@ -6,7 +6,7 @@ const magicFabric = require('./magicFabric');
 
 module.exports = (doc, svgUrl, options={}) => {
   let borderPoints = options.borderPoints || 100;
-  let internalPoints = options.internalPoints || 300;
+  let internalPoints = (options.internalPoints == undefined) ? 300 : options.internalPoints;
   let zoom = options.zoom || 0.5;
   let xRay = options.xRay || false;
   let noHover = options.noHover || false;
@@ -21,6 +21,8 @@ module.exports = (doc, svgUrl, options={}) => {
   let margin = options.margin || 23;
   let fixedBias = options.fixedBias || 0;
   let linkStrength = options.linkStrength || 1.5;
+  let distanceModifier = options.distanceModifier || 0;
+  let maxEdgeDistance = options.maxEdgeDistance || null;
 
   const container = yo`
     <div style="zoom:${zoom}; width:${width}px; height:${height}px; overflow:hidden;">
@@ -88,8 +90,38 @@ module.exports = (doc, svgUrl, options={}) => {
 
   }
 
+  let pointTimeout;
+
+  function forceAtPoint(x, y, options={}) {
+    let strength = options.strength || 1;
+    let radius = options.radius || 1;
+    let timeout = options.timeout || 500;
+    let drawMode = options.drawMode || false;
+    let objectIndex = options.objectIndex == undefined ? '' : options.objectIndex;
+
+    if (pointTimeout) clearTimeout(pointTimeout);
+    simulation.force("point", null);
+
+    simulation.force("point",
+      d3.forceRadial(radius,x,y).strength((d) => {
+        if (objectIndex == d.group) {
+          return strength;
+        }
+        else {
+          return 0;
+        }
+      })
+    );
+
+    if (timeout != -1)
+      pointTimeout = setTimeout(()=>{
+        simulation.force("point", null);
+      }, timeout);
+  }
+
   function moveAtAngle(bbox, mouseEvent) {
-    moveStrength = 0.025;
+    if (noHover == true) return;
+    moveStrength = 0.005;
     let center = {
       x: bbox.left + bbox.width/2,
       y: bbox.top + bbox.height/2
@@ -127,7 +159,13 @@ module.exports = (doc, svgUrl, options={}) => {
 
   xhr.onload = (...args) => {
     div.innerHTML = xhr.responseText;
-    graph = magicFabric(div.firstChild, {borderPoints, internalPoints, noFixed, fixedBias});
+    graph = magicFabric(div.firstChild, {
+      borderPoints,
+      internalPoints,
+      noFixed,
+      fixedBias,
+      maxEdgeDistance
+    });
 
     var svg = d3.select(container.querySelector("svg"));
 
@@ -143,7 +181,7 @@ module.exports = (doc, svgUrl, options={}) => {
         .force("link", d3.forceLink(graph.edges).id(function(d) { return d.id; })
         .strength(linkStrength)
         .distance((d) => {
-          return d.distance;
+          return d.distance + distanceModifier;
         }))
         .alphaDecay(0.001)
         .on("tick", ticked);
@@ -219,5 +257,5 @@ module.exports = (doc, svgUrl, options={}) => {
   xhr.open("GET",svgUrl,true);
   xhr.send();
 
-  return {moveAtAngle};
+  return {moveAtAngle, forceAtPoint};
 };

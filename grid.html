@@ -1,0 +1,89 @@
+<html>
+  <head>
+    <script src="/build/graphToD3.web.js"></script>
+    <style>
+      #dropContainer {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        margin-top: -250px;
+        margin-left: -250px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="dropContainer"></div>
+    <script>
+
+    let container = document.querySelector("#dropContainer");
+    let actions;
+    actions = graphToD3(container, "/resources/Drops.svg", {
+      xRay: false,
+      width: 1000,
+      height: 1000,
+      margin: 200,
+      nodeRadius: 100,
+      bandwidth: 11,
+      threshold: 0.010,
+      noHover: true,
+      noFixed: true,
+      linkStrength: 1.3,
+      borderPoints: 50,
+      scale: 0.2,
+      internalPoints: 0,
+      distanceModifier: 150,
+      maxEdgeDistance: 100
+    });
+
+    window.actions = actions;
+
+    let x = 100, y = 100;
+
+    let drop0 = {x, y};
+    let drop1 = {x, y};
+
+    document.addEventListener("keyup", (e)=> {
+      let strength = 0.7;
+      let radius = 0.1;
+      let stride = 125;
+      let timeout = 500;
+      let objectIndex = 0;
+
+      switch(e.key) {
+        case "a":
+        case "d":
+        case "s":
+        case "w":
+        objectIndex = 1;
+        break;
+      }
+
+      let drop;
+      if (objectIndex == 0) drop = drop0;
+      if (objectIndex == 1) drop = drop1;
+
+
+      switch(e.key) {
+        case "a":
+        case "ArrowLeft":
+          drop.x -= stride;
+          break;
+        case "d":
+        case "ArrowRight":
+          drop.x += stride;
+          break;
+        case "w":
+        case "ArrowUp":
+          drop.y -= stride;
+          break;
+        case "s":
+        case "ArrowDown":
+          drop.y += stride;
+          break;
+      }
+      actions.forceAtPoint(drop.x, drop.y, {strength, radius, timeout, objectIndex});
+    });
+
+    </script>
+  </body>
+</html>

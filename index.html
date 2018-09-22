@@ -11,10 +11,10 @@
       }
       .textContainer {
         zoom: 0.05;
-        margin-top: 7550px;
+        margin-top: 8300px;
         position: fixed;
         left: 50%;
-        margin-left: -1800px;
+        /* margin-left: -1800px; */
       }
 
       .textContainer path {
@@ -23,7 +23,7 @@
 
       #braineryTextContainer {
         /* top: 0px; */
-        margin-top: 100px;
+        margin-top: 600px;
         margin-left: -1000px;
         /* margin-left: -2600px; */
       }
@@ -68,13 +68,15 @@
       height: 1000,
       margin: 200,
       nodeRadius: 100,
-      bandwidth: 9,
-      threshold: 0.019,
+      bandwidth: 8,
+      threshold: 0.017,
       noHover: false,
       fixedBias: 0.3,
-      linkStrength: 1,
-      borderPoints: 40,
-      zoom: 0.4
+      linkStrength: 0.6,
+      borderPoints: 50,
+      scale: 0.8,
+      internalPoints: 300,
+      distanceModifier: 20
     });
 
     // container = document.querySelector("#OvalContainer");

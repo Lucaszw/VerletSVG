@@ -1,4 +1,3 @@
-const earcut = require('earcut');
 const svgIntersections = require('svg-intersections');
 const SVG = require('svg.js');
 const _ = require('lodash');
@@ -9,17 +8,36 @@ const Ray = (x1,y1,x2,y2) => {
 }
 
 const constructShape = (element) => {
-  let shape = null;
+  let shape = null, shapes = [];
+
   switch (element.tagName) {
   case "g":
-    shape = constructShape(element.querySelector("#outer"));
-    let holes = _.map(element.querySelectorAll("#inner"), (s) => {
-      return [constructShape(s), s];
-    });
-    shape.isGroup = true;
-    shape.holes = holes;
-    shape.shape = SVG.adopt(element.querySelector("#outer"));
-    return shape;
+    const constructGroup = (i='') => {
+      let el = element.querySelector(`#outer${i}`);
+      if (el == null) return null;
+      shape = constructShape(el);
+      let holes = _.map(element.querySelectorAll(`#inner${i}`), (s) => {
+        return [constructShape(s), s];
+      });
+      shape.isGroup = true;
+      shape.holes = holes;
+      shape.shape = SVG.adopt(element.querySelector(`#outer${i}`));
+      return shape
+    }
+
+    if (element.querySelector("#outer0") == null) {
+      return constructGroup('');
+    } else {
+      // If there are multiple outer shapes, return a list that contains
+      // all of them
+      let lastShape = null;
+      for (let i=0;i<100;i++) {
+        let lastShape = constructGroup(i);
+        if (lastShape == null) break;
+        shapes = [...shapes, lastShape];
+      }
+      return shapes;
+    }
   case "path":
     const d = element.getAttribute("d");
     shape = svgIntersections.shape("path", {d});
@@ -72,18 +90,6 @@ const constructPolygonCoordinates = (shape, box, borderPoints) => {
   let polygonCoordinates = [];
   let travelDistanceY = ((box.y2 - box.y)/borderPoints);
   let travelDistanceX = ((box.x2 - box.x)/borderPoints);
-
-  // Start:
-  // let intersections, ray, iStart;
-  // for (let i=0;i<100;i++) {
-  //   if (_.get(intersections, "points[0]")) break;
-  //   ray = Ray(0,box.y+i*travelDistanceY,1000,box.y+i*travelDistanceY);
-  //   intersections = castRay(ray, shape);
-  // }
-
-  // let start = intersections.points[0];
-  // let end = intersections.points[1];
-  // polygonCoordinates = [...polygonCoordinates, [start.x, start.y]];
 
   const addCoordinate = (direction,xy) => {
     let p1;
@@ -153,105 +159,111 @@ const constructPolygonCoordinates = (shape, box, borderPoints) => {
 
 module.exports = (svg, options) => {
   let borderPoints = options.borderPoints || 100;
-  let internalPoints = options.internalPoints || 300;
+  let internalPoints = (options.internalPoints == undefined) ? 300 : options.internalPoints;
   let noFixed = options.noFixed || false;
   let fixedBias = options.fixedBias || 0;
+  let maxEdgeDistance = options.maxEdgeDistance || null;
 
   var element = SVG.adopt(svg);
   let shape = constructShape(svg.querySelector("#MyShape"));
-  let box = shape.shape.bbox();
+  let shapes = [shape];
+  if (_.isArray(shape)) shapes = shape;
 
-  let vertices  = [];
   let nodes = {};
   let edges = [];
 
-  // Generate coordinates for constructing a polygon
-  let polygonCoordinates = constructPolygonCoordinates(shape, box, borderPoints);
-  // Generate coordinates for holes in outer polygon
-  let holeCoordinates = [];
-  if (shape.isGroup && shape.holes.length > 0) {
-    _.each(shape.holes, (h) => {
-      let [hole, holeShape] = h;
-      let box = hole.shape.bbox();
-      let holeCoords = constructPolygonCoordinates(hole, box, borderPoints);
-      holeCoordinates = [...holeCoordinates, holeCoords];
+  _.each(shapes, (shape, j) => {
+    console.log({j});
+    let box = shape.shape.bbox();
+
+    // Generate coordinates for constructing a polygon
+    let polygonCoordinates = constructPolygonCoordinates(shape, box, borderPoints);
+    // Generate coordinates for holes in outer polygon
+    let holeCoordinates = [];
+    if (shape.isGroup && shape.holes.length > 0) {
+      _.each(shape.holes, (h) => {
+        let [hole, holeShape] = h;
+        let box = hole.shape.bbox();
+        let holeCoords = constructPolygonCoordinates(hole, box, borderPoints);
+        holeCoordinates = [...holeCoordinates, holeCoords];
+      });
+
+    }
+
+    // Generate polygon from coordinates using Turf.js
+    let polygon = turf.polygon([polygonCoordinates], { name: 'shapeSurface' });
+
+    // Generate set of random points inside polygon for triangulation
+    let points = turf.randomPoint(internalPoints, {bbox: [box.x, box.y, box.x + box.width, box.y + box.height]});
+    let pointsWithin = turf.pointsWithinPolygon(points, polygon);
+    let outerPoints = [];
+
+    // Remove points that reside inside holes
+    _.each(holeCoordinates, (coords) => {
+      let holePoly = turf.polygon([coords], { name: 'shapeSurface' });
+      let pointsOutside = turf.pointsWithinPolygon(points, holePoly);
+      _.each(pointsOutside.features, (p)=>{
+        p.shouldDelete = true;
+      });
+      for (let i=0;i<coords.length;i++)
+        outerPoints = [...outerPoints, turf.point(coords[i])];
     });
 
-  }
+    for (let i=0;i<polygonCoordinates.length;i++)
+      outerPoints = [...outerPoints, turf.point(polygonCoordinates[i])];
 
-  // Generate polygon from coordinates using Turf.js
-  let polygon = turf.polygon([polygonCoordinates], { name: 'shapeSurface' });
+    pointsWithin.features = _.filter(pointsWithin.features, (f)=>{return !f.shouldDelete});
 
-  // Generate set of random points inside polygon for triangulation
-  let points = turf.randomPoint(internalPoints, {bbox: [box.x, box.y, box.x + box.width, box.y + box.height]});
-  let pointsWithin = turf.pointsWithinPolygon(points, polygon);
-  let outerPoints = [];
+    points.features = [...outerPoints, ...pointsWithin.features];
 
-  // Remove points that reside inside holes
-  _.each(holeCoordinates, (coords) => {
-    let holePoly = turf.polygon([coords], { name: 'shapeSurface' });
-    let pointsOutside = turf.pointsWithinPolygon(points, holePoly);
-    _.each(pointsOutside.features, (p)=>{
-      p.shouldDelete = true;
-    });
-    for (let i=0;i<coords.length;i++)
-      outerPoints = [...outerPoints, turf.point(coords[i])];
-  });
+    var tin = turf.tin(points);
 
-  for (let i=0;i<polygonCoordinates.length;i++)
-    outerPoints = [...outerPoints, turf.point(polygonCoordinates[i])];
+    let triangles = _.map(tin.features, "geometry.coordinates[0]");
 
-  pointsWithin.features = _.filter(pointsWithin.features, (f)=>{return !f.shouldDelete});
+    for (let i=0;i<triangles.length;i++) {
+      let t = triangles[i];
+      for (let ii=0;ii<t.length;ii++) {
+        let p = t[ii];
+        let x = p[0];
+        let y = p[1];
+        let id = fetchId(p[0], p[1]);
+        nodes[id] = {id, color: "black", x, y, group: j};
+        if (Math.round(Math.random() + fixedBias) && !noFixed) {
+          nodes[id].fx = x;
+          nodes[id].fy = y;
+          nodes[id].color = "red";
+        }
+      }
 
-  points.features = [...outerPoints, ...pointsWithin.features];
+      for (let ii=0;ii<t.length-1;ii++) {
 
-  var tin = turf.tin(points);
+        let x1 = t[ii][0];
+        let y1 = t[ii][1];
 
-  let triangles = _.map(tin.features, "geometry.coordinates[0]");
+        let x2 = t[ii+1][0];
+        let y2 = t[ii+1][1];
 
-  for (let i=0;i<triangles.length;i++) {
-    let t = triangles[i];
-    for (let ii=0;ii<t.length;ii++) {
-      let p = t[ii];
-      let x = p[0];
-      let y = p[1];
-      let id = fetchId(p[0], p[1]);
-      nodes[id] = {id, color: "black", x, y};
-      if (Math.round(Math.random() + fixedBias) && !noFixed) {
-        nodes[id].fx = x;
-        nodes[id].fy = y;
-        nodes[id].color = "red";
+        let sourceId = fetchId(x1, y1);
+        let targetId = fetchId(x2, y2);
+        let distance = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+
+        // Get center point
+        let dx = x2-x1;
+        let dy = y2-y1;
+        let midpoint = turf.point([x1 + dx/2, y1+dy/2]);
+
+        // Add a max link distance to nodes:
+        let edge = {source: sourceId, target: targetId, distance: distance};
+        if (maxEdgeDistance != null) {
+          if (distance < maxEdgeDistance)
+            edges = [...edges, edge];
+        } else {
+          edges = [...edges, edge];
+        }
+
       }
     }
-
-    for (let ii=0;ii<t.length-1;ii++) {
-
-      let x1 = t[ii][0];
-      let y1 = t[ii][1];
-
-      let x2 = t[ii+1][0];
-      let y2 = t[ii+1][1];
-
-      let sourceId = fetchId(x1, y1);
-      let targetId = fetchId(x2, y2);
-      let distance = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
-
-      // Get center point
-      let dx = x2-x1;
-      let dy = y2-y1;
-      let midpoint = turf.point([x1 + dx/2, y1+dy/2]);
-
-      // Check if it exists within the bounds of original polygon
-      // let withinBounds = turf.pointsWithinPolygon(midpoint, polygon).features.length;
-      // if (withinBounds) {
-        // Only add edges that don't cross bounds of SVG
-        let edge = {source: sourceId, target: targetId, distance: distance};
-        edges = [...edges, edge];
-      // }
-    }
-    // Iterate through triangles
-    // let triangle = trangles[i]
-  }
+  });
 
   nodes = _.values(nodes);
 
