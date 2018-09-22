@@ -27,25 +27,39 @@
       threshold: 0.010,
       noHover: true,
       noFixed: true,
-      linkStrength: 1.3,
-      borderPoints: 50,
+      linkStrength: 0.8,
+      borderPoints: 40,
       scale: 0.2,
       internalPoints: 0,
-      distanceModifier: 150,
-      maxEdgeDistance: 100
+      distanceModifier: 300,
+      maxEdgeDistance: 50
     });
 
     window.actions = actions;
 
     let x = 100, y = 100;
 
-    let drop0 = {x, y};
-    let drop1 = {x, y};
+    let drops = {
+      0: {x, y, group: 0},
+      1: {x, y, group: 1},
+      2: {x, y, group: 2},
+      3: {x, y, group: 3},
+      4: {x, y, group: 4},
+      5: {x, y, group: 5},
+      6: {x, y, group: 6},
+      7: {x, y, group: 7}
+    };
+
+    let drop;
+
+    document.addEventListener('node-clicked', function (e) {
+      drop = drops[e.data.group];
+    }, false);
 
     document.addEventListener("keyup", (e)=> {
-      let strength = 0.7;
+      let strength = 0.8;
       let radius = 0.1;
-      let stride = 125;
+      let stride = 300;
       let timeout = 500;
       let objectIndex = 0;
 
@@ -57,11 +71,6 @@
         objectIndex = 1;
         break;
       }
-
-      let drop;
-      if (objectIndex == 0) drop = drop0;
-      if (objectIndex == 1) drop = drop1;
-
 
       switch(e.key) {
         case "a":
@@ -81,7 +90,7 @@
           drop.y += stride;
           break;
       }
-      actions.forceAtPoint(drop.x, drop.y, {strength, radius, timeout, objectIndex});
+      actions.forceAtPoint(drop.x, drop.y, {strength, radius, timeout, group: drop.group});
     });
 
     </script>

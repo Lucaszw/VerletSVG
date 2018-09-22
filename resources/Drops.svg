@@ -4,8 +4,15 @@
     <defs></defs>
     <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
         <g id="MyShape" transform="translate(1.000000, 1.000000)" fill="#D8D8D8" fill-rule="nonzero" stroke="#979797">
-            <circle id="outer1" cx="391" cy="391" r="391"></circle>
-            <circle id="outer0" cx="1599" cy="391" r="391"></circle>
+            <!-- <circle id="outer2" cx="391" cy="391" r="391"></circle> -->
+            <circle id="outer7" cx="3791" cy="391" r="391"></circle>
+            <circle id="outer6" cx="3191" cy="391" r="391"></circle>
+            <circle id="outer5" cx="2691" cy="391" r="391"></circle>
+            <circle id="outer4" cx="2191" cy="391" r="391"></circle>
+            <circle id="outer3" cx="1691" cy="391" r="391"></circle>
+            <circle id="outer2" cx="1191" cy="391" r="391"></circle>
+            <circle id="outer1" cx="891" cy="391" r="391"></circle>
+            <circle id="outer0" cx="391" cy="391" r="391"></circle>
         </g>
     </g>
 </svg>

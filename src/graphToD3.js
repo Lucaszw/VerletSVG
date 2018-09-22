@@ -97,14 +97,14 @@ module.exports = (doc, svgUrl, options={}) => {
     let radius = options.radius || 1;
     let timeout = options.timeout || 500;
     let drawMode = options.drawMode || false;
-    let objectIndex = options.objectIndex == undefined ? '' : options.objectIndex;
+    let group = options.group == undefined ? 0 : options.group;
 
     if (pointTimeout) clearTimeout(pointTimeout);
     simulation.force("point", null);
 
     simulation.force("point",
       d3.forceRadial(radius,x,y).strength((d) => {
-        if (objectIndex == d.group) {
+        if (group == d.group) {
           return strength;
         }
         else {
@@ -197,6 +197,7 @@ module.exports = (doc, svgUrl, options={}) => {
           if (xRay) return "rgba(93, 93, 93, 0.1)";
           return null;
         });
+    var event = new Event('node-clicked');
     var node = svg.append("g")
         .attr("class", "nodes")
       .selectAll("circle")
@@ -209,6 +210,11 @@ module.exports = (doc, svgUrl, options={}) => {
           return "rgba(0,0,0, 0)"
         })
         .on("mouseover", mouseover)
+        .on("click", (d) => {
+          console.log("click!");
+          event.data = d;
+          document.dispatchEvent(event);
+        })
         .call(d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
