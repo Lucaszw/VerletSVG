@@ -33,7 +33,27 @@ var webConfigs = [{
           ]
         }
       ]
+    }
+  },
+
+  {
+    entry: './src/perspective.js',
+    output: {
+      filename: './build/perspective.web.js',
+      library: 'perspective',
+      libraryTarget: 'var'
     },
-}];
+    module: {
+      loaders: [
+        { test: /\.css$/,
+          use: [
+            { loader: 'style-loader' },
+            { loader: 'css-loader' }
+          ]
+        }
+      ]
+    }
+  }
+];
 
 module.exports = webConfigs;

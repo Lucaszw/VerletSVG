@@ -1,13 +1,26 @@
 <html>
   <head>
     <script src="/build/graphToD3.web.js"></script>
+    <script src="/build/perspective.web.js"></script>
     <style>
       #dropContainer {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        margin-top: -250px;
-        margin-left: -250px;
+        /* position: fixed;
+        background-color:white; */
+
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 1500px;
+        height: 1200px;
+        border: 1px solid red;
+        transform-origin: 0 0;
+        -webkit-transform-origin: 0 0;
+        -moz-transform-origin: 0 0;
+        -o-transform-origin: 0 0;
+      }
+      body {
+        background: url("/resources/table.JPG");
+        background-size: 100%;
       }
     </style>
   </head>
@@ -16,26 +29,29 @@
     <script>
 
     let container = document.querySelector("#dropContainer");
-    let actions;
-    actions = graphToD3(container, "/resources/Drops.svg", {
+    let plot;
+    plot = graphToD3(container, "/resources/Drops.svg", {
       xRay: false,
-      width: 1000,
-      height: 1000,
-      margin: 200,
+      width: 1400,
+      height: 800,
+      margin: 0,
       nodeRadius: 100,
-      bandwidth: 11,
-      threshold: 0.010,
+      bandwidth: 10,
+      threshold: 0.009,
       noHover: true,
       noFixed: true,
-      linkStrength: 0.8,
-      borderPoints: 40,
-      scale: 0.2,
-      internalPoints: 0,
-      distanceModifier: 300,
-      maxEdgeDistance: 50
+      linkStrength: 1.4,
+      borderPoints: 60,
+      scale: 0.05,
+      internalPoints: 50,
+      distanceModifier: 1000,
+      maxEdgeDistance: 200,
+      zoom: 0.8
     });
 
-    window.actions = actions;
+    perspective(container);
+
+    window.plot = plot;
 
     let x = 100, y = 100;
 
@@ -47,7 +63,9 @@
       4: {x, y, group: 4},
       5: {x, y, group: 5},
       6: {x, y, group: 6},
-      7: {x, y, group: 7}
+      7: {x, y, group: 7},
+      8: {x, y, group: 8},
+      9: {x, y, group: 9}
     };
 
     let drop;
@@ -57,9 +75,9 @@
     }, false);
 
     document.addEventListener("keyup", (e)=> {
-      let strength = 0.8;
+      let strength = 0.9;
       let radius = 0.1;
-      let stride = 300;
+      let stride = 800;
       let timeout = 500;
       let objectIndex = 0;
 
@@ -90,7 +108,7 @@
           drop.y += stride;
           break;
       }
-      actions.forceAtPoint(drop.x, drop.y, {strength, radius, timeout, group: drop.group});
+      plot.forceAtPoint(drop.x, drop.y, {strength, radius, timeout:-1, group: drop.group});
     });
 
     </script>

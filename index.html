@@ -3,11 +3,14 @@
     <script src="/build/graphToD3.web.js"></script>
     <style>
       #BrainContainer {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        margin-top: -250px;
-        margin-left: -250px;
+        position: absolute;
+        /* left: 50%; */
+        /* top: 50%; */
+        /* margin-top: -250px; */
+        /* margin-left: -250px; */
+        width: 900px;
+        height: 700px;
+        border: 1px solid red;
       }
       .textContainer {
         zoom: 0.05;
@@ -62,21 +65,25 @@
 
     let container = document.querySelector("#BrainContainer");
     let actions;
+
     actions = graphToD3(container, "/resources/Brain.svg", {
-      xRay: false,
+      noContours: false,
+      xRay:  false,
       width: 1000,
       height: 1000,
-      margin: 200,
-      nodeRadius: 100,
-      bandwidth: 8,
-      threshold: 0.017,
+      nodeRadius: 2,
+      bandwidth: 10,
+      threshold: 0.02,
       noHover: false,
-      fixedBias: 0.3,
-      linkStrength: 0.6,
-      borderPoints: 50,
-      scale: 0.8,
-      internalPoints: 300,
-      distanceModifier: 20
+      fixedBias: 0.2,
+      linkStrength: 1.1,
+      borderPoints: 20,
+      internalPoints: 250,
+      distanceModifier: 0,
+      margin: 0,
+      scale: 0.75,
+      offsetX: 150,
+      offsetY: 50
     });
 
     // container = document.querySelector("#OvalContainer");
@@ -101,10 +108,8 @@
     // });
 
     document.onmousemove = (e) => {
-      let bbox = document.querySelector("#d3Container").getBoundingClientRect();
-      // console.log({bbox})
 
-      actions.moveAtAngle(bbox, e);
+      actions.moveAtAngle(e);
       // console.log("Mouse moved!");
       // console.log({e});
     }

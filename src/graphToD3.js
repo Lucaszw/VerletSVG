@@ -7,7 +7,7 @@ const magicFabric = require('./magicFabric');
 module.exports = (doc, svgUrl, options={}) => {
   let borderPoints = options.borderPoints || 100;
   let internalPoints = (options.internalPoints == undefined) ? 300 : options.internalPoints;
-  let zoom = options.zoom || 0.5;
+  let zoom = options.zoom || 1;
   let xRay = options.xRay || false;
   let noHover = options.noHover || false;
   let noContours = options.noContours || false;
@@ -23,12 +23,38 @@ module.exports = (doc, svgUrl, options={}) => {
   let linkStrength = options.linkStrength || 1.5;
   let distanceModifier = options.distanceModifier || 0;
   let maxEdgeDistance = options.maxEdgeDistance || null;
+  let offsetX = options.offsetX || 0;
+  let offsetY = options.offsetY || 0;
+
+  let containerStyle = `
+    width: 100%;
+    height: 100%;
+    /* overflow: hidden; */
+  `;
+
+  let svgStyle = `
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      width: 100%;
+      height: 100%;
+  `;
+  let canvasStyle = `
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+  `;
+
 
   const container = yo`
-    <div style="zoom:${zoom}; width:${width}px; height:${height}px; overflow:hidden;">
-      <canvas style="position:absolute;top;0px;left:0px" width="${width}" height="${height}">
+    <div style="${containerStyle}">
+      <canvas width="100%" height="100%" style="${canvasStyle}">
       </canvas>
-      <svg style="position:absolute;top;0px;left:0px" width="${width}" height="${height}" id="d3Container">
+      <svg style="${svgStyle}"
+        preserveAspectRatio="none"
+        id="d3Container">
       </svg>
     </div>
   `;
@@ -54,8 +80,17 @@ module.exports = (doc, svgUrl, options={}) => {
     d.fy = null;
   }
 
+  let oldWidth, oldHeight;
   function transform(data, axis) {
-    return (margin + data) * scale;
+    if (axis == "x") {
+      return data*scale + offsetX;
+    }
+
+    if (axis == "y") {
+      return data*scale + offsetY;
+    }
+
+    return data;
   }
 
   let prevId = null;
@@ -87,7 +122,6 @@ module.exports = (doc, svgUrl, options={}) => {
       }
     }, 10);
 
-
   }
 
   let pointTimeout;
@@ -99,13 +133,15 @@ module.exports = (doc, svgUrl, options={}) => {
     let drawMode = options.drawMode || false;
     let group = options.group == undefined ? 0 : options.group;
 
-    if (pointTimeout) clearTimeout(pointTimeout);
+    if (pointTimeout) {
+      clearTimeout(pointTimeout);
+    }
     simulation.force("point", null);
 
     simulation.force("point",
       d3.forceRadial(radius,x,y).strength((d) => {
         if (group == d.group) {
-          return strength;
+          return strength*Math.random()**2;
         }
         else {
           return 0;
@@ -119,17 +155,18 @@ module.exports = (doc, svgUrl, options={}) => {
       }, timeout);
   }
 
-  function moveAtAngle(bbox, mouseEvent) {
+  function moveAtAngle(mouseEvent) {
+    let bbox = container.querySelector(".nodes").getBoundingClientRect();
     if (noHover == true) return;
-    moveStrength = 0.005;
+    moveStrength = 0.05;
     let center = {
       x: bbox.left + bbox.width/2,
       y: bbox.top + bbox.height/2
     };
 
     let mouse = {
-      x: mouseEvent.clientX/zoom,
-      y: mouseEvent.clientY/zoom
+      x: mouseEvent.clientX,
+      y: mouseEvent.clientY
     };
 
     let dx = mouse.x - center.x;
@@ -139,11 +176,11 @@ module.exports = (doc, svgUrl, options={}) => {
 
     // XXX: atan only works for top right quadrant so bias the angle based
     // on the sign of x & y
-    if (dx < 0 ) angle += Math.PI;
-    else if (dy < 0 ) angle += 2* Math.PI;
+    if (dx < 0) angle += Math.PI;
+    else if (dy < 0 ) angle += 2*Math.PI;
 
-    let Fx = moveStrength*Math.cos(angle);
-    let Fy = moveStrength*Math.sin(angle);
+    let Fx = Math.abs(moveStrength*Math.cos(angle));
+    let Fy = Math.abs(moveStrength*Math.sin(angle));
     let Dx = (bbox.width)*Math.cos(angle);
     let Dy = (bbox.height)*Math.sin(angle);
 
@@ -169,21 +206,13 @@ module.exports = (doc, svgUrl, options={}) => {
 
     var svg = d3.select(container.querySelector("svg"));
 
-
-    var canvas = d3.select(container.querySelector("canvas"));
-    var context = canvas.node().getContext('2d');
-
-    context.fillStyle = '#333333';
-    context.strokeStyle = '#000000';
-    var path = d3.geoPath().context(context);
-
     simulation = d3.forceSimulation(graph.nodes)
         .force("link", d3.forceLink(graph.edges).id(function(d) { return d.id; })
         .strength(linkStrength)
         .distance((d) => {
           return d.distance + distanceModifier;
         }))
-        .alphaDecay(0.001)
+        .alphaDecay(0)
         .on("tick", ticked);
         // .force("charge", d3.forceManyBody()
         // .strength(-5))
@@ -223,21 +252,35 @@ module.exports = (doc, svgUrl, options={}) => {
     node.append("title")
         .text(function(d) { return d.id; });
 
+    var canvas = container.querySelector("canvas");
+    var context = canvas.getContext('2d');
+    context.fillStyle = 'none';
+    context.strokeStyle = 'black';
+    var path = d3.geoPath().context(context);
+
     function ticked(...args) {
 
+     let containerBounds = container.getBoundingClientRect();
+
+     // XXX: Canvas drawing scale based on canvas width & height attributes!!
+     canvas.width = containerBounds.width;
+     canvas.height = containerBounds.height;
+
      let data = d3.contourDensity()
-           .x(function(d) { return transform(d.x); })
-           .y(function(d) { return transform(d.y); })
-           .size([width, height])
+           .x(function(d, ...args) {
+             return transform(d.x, "x");
+           })
+           .y(function(d) {
+             return transform(d.y, "y");
+           })
+           .size([containerBounds.width, containerBounds.height])
            .bandwidth(bandwidth)
            .thresholds([threshold])
-         (graph.nodes)
+         (graph.nodes);
 
-     context.fillStyle = 'none';
-     context.strokeStyle = 'black';
-     context.clearRect(0, 0, width, height);
-
+     context.clearRect(0, 0, containerBounds.width, containerBounds.height);
      context.beginPath();
+
      path(data[0]);
 
      if (noContours == false) {
@@ -246,16 +289,16 @@ module.exports = (doc, svgUrl, options={}) => {
      }
 
       link
-          .attr("x1", function(d) { return transform(d.source.x); })
-          .attr("y1", function(d) { return transform(d.source.y); })
-          .attr("x2", function(d) { return transform(d.target.x); })
-          .attr("y2", function(d) { return transform(d.target.y); });
+          .attr("x1", function(d) { return transform(d.source.x, "x"); })
+          .attr("y1", function(d) { return transform(d.source.y, "y"); })
+          .attr("x2", function(d) { return transform(d.target.x, "x"); })
+          .attr("y2", function(d) { return transform(d.target.y, "y"); });
 
       node
           .attr("cx", function(d) {
-            return transform(d.x);
+            return transform(d.x, "x");
           })
-          .attr("cy", function(d) { return transform(d.y); });
+          .attr("cy", function(d) { return transform(d.y, "y"); });
 
     }
   };
