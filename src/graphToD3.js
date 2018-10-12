@@ -7,7 +7,6 @@ const magicFabric = require('./magicFabric');
 module.exports = (doc, svgUrl, options={}) => {
   let borderPoints = options.borderPoints || 100;
   let internalPoints = (options.internalPoints == undefined) ? 300 : options.internalPoints;
-  let zoom = options.zoom || 1;
   let xRay = options.xRay || false;
   let noHover = options.noHover || false;
   let noContours = options.noContours || false;
@@ -25,6 +24,7 @@ module.exports = (doc, svgUrl, options={}) => {
   let maxEdgeDistance = options.maxEdgeDistance || null;
   let offsetX = options.offsetX || 0;
   let offsetY = options.offsetY || 0;
+  let cellSize = options.cellSize || 4;
 
   let containerStyle = `
     width: 100%;
@@ -276,6 +276,7 @@ module.exports = (doc, svgUrl, options={}) => {
            .size([containerBounds.width, containerBounds.height])
            .bandwidth(bandwidth)
            .thresholds([threshold])
+           .cellSize(cellSize)
          (graph.nodes);
 
      context.clearRect(0, 0, containerBounds.width, containerBounds.height);

@@ -1,7 +1,7 @@
 {
   "name": "MagicFabric",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "build/graphToD3.web.js",
   "license": "MIT",
   "dependencies": {
     "@turf/helpers": "^6.1.4",

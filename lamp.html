@@ -6,7 +6,7 @@
       #dropContainer {
         /* position: fixed;
         background-color:white; */
-
+        opacity: 0.9;
         position: absolute;
         top: 0px;
         left: 0px;
@@ -14,11 +14,11 @@
         -webkit-transform-origin: 0 0;
         -moz-transform-origin: 0 0;
         -o-transform-origin: 0 0;
-        background:rgba(255,255,255,0.4);
       }
       body {
-        background: url("/resources/table.JPG");
-        background-size: 100%;
+        background: url("/resources/flatGlassRender.png");
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
       }
     </style>
   </head>
@@ -32,16 +32,16 @@
       xRay: false,
       margin: 0,
       nodeRadius: 100,
-      bandwidth: 8,
-      threshold: 0.1,
+      bandwidth: 5,
+      threshold: 0.4,
       noHover: true,
       noFixed: true,
-      linkStrength: 1.5,
-      borderPoints: 60,
-      scale: 0.090,
-      internalPoints: 50,
-      distanceModifier: 200,
-      maxEdgeDistance: 0,
+      linkStrength: 1.8,
+      borderPoints: 30,
+      scale: 0.015,
+      internalPoints: 25,
+      distanceModifier: 100,
+      maxEdgeDistance: 10,
     });
 
     perspective(container);

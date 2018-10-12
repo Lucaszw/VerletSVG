@@ -1,0 +1,91 @@
+<html>
+  <head>
+    <script src="/build/graphToD3.web.js"></script>
+    <style>
+
+      .sim {
+        position: absolute;
+        /* left: 50%; */
+        /* top: 50%; */
+        /* margin-top: -250px; */
+        /* margin-left: -250px; */
+        width: 225px;
+        height: 175px;
+        border: 1px solid blue;
+      }
+
+      #Z0 {
+        left:0px;
+      }
+
+      #E1 {
+        left: 225px;
+      }
+
+      #E2 {
+        left: 450px;
+      }
+
+      #R3 {
+        left: 675px;
+      }
+
+    </style>
+  </head>
+  <body>
+
+    <div id="Z0" class="sim"></div>
+    <div id="E1" class="sim"></div>
+    <div id="E2" class="sim"></div>
+    <div id="R3" class="sim"></div>
+
+    <script>
+
+      let urlp={};
+      let args = location.search.replace("?","").split("&");
+      for (let i=0;i<args.length;i++) {
+        e=args[i].split("=");
+        urlp[e[0]]= e[1];
+      }
+      urlp.svg = urlp.svg || "Brain";
+
+    </script>
+    <script>
+
+    let actions = [];
+
+    let simParams = {
+      noContours: false,
+      xRay:  false,
+      nodeRadius: 2,
+      bandwidth: 4,
+      threshold: 0.20,
+      noHover: false,
+      fixedBias: 0.2,
+      linkStrength: 1,
+      borderPoints: 20,
+      internalPoints: 100,
+      distanceModifier: 5,
+      margin: 0,
+      scale: 0.1825,
+      offsetX: 75,
+      offsetY: 50
+    };
+
+    let names = ["Z", "E", "E", "R"];
+    let containers = [];
+
+    names.forEach((name, i)=> {
+      let container = document.querySelector(`#${name}${i}`);
+      actions.push(graphToD3(container, `/resources/${name}.svg`, simParams));
+    });
+
+    document.onmousemove = (e) => {
+      actions.forEach((action) => {
+        action.moveAtAngle(e);
+      });
+    }
+
+    </script>
+  </body>
+</html>
